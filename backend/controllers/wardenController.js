@@ -26,7 +26,27 @@ export const registerController = async (req, res) => {
   }
 };
 
-export const loginController = async (req, res) => {};
+export const loginController = async (req, res) => {
+  try {
+    const { universityID, password } = req.body;
+    const user = await Warden.findOne({ universityID });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const authToken = user.generateAuthToken();
+    await user.save();
+    res.json({ user, token: authToken });
+  } catch {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 export const getFreeSlots = async (req, res) => {};
 

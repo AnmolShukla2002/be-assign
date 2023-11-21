@@ -27,6 +27,7 @@ const connectDB = async () => {
 
 app.use(express.json());
 app.use(cors(corsOptions));
+
 app.use("/api/v1/", wardenRoute);
 
 app.listen(PORT, () => {

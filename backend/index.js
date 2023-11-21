@@ -1,16 +1,18 @@
 import express from "express";
-import dotenv from "dotenv";
+import cors from "cors";
 import mongoose from "mongoose";
-
+import dotenv from "dotenv";
+import wardenRoute from "./routes/wardenRoute.js";
 dotenv.config();
 
-const PORT = process.env.PORT || 9000;
 const app = express();
+const PORT = process.env.PORT || 9000;
+const corsOptions = {
+  origin: true,
+};
 
-app.use(express.json());
-
-app.use("/", (req, res) => {
-  res.send("API IS WORKING");
+app.get("/", (req, res) => {
+  res.send("API is working");
 });
 
 mongoose.set("strictQuery", false);
@@ -23,7 +25,11 @@ const connectDB = async () => {
   }
 };
 
-app.listen(PORT, (req, res) => {
+app.use(express.json());
+app.use(cors(corsOptions));
+app.use("/api/v1/", wardenRoute);
+
+app.listen(PORT, () => {
   connectDB();
   console.log(`Server is running on ${PORT}`);
 });

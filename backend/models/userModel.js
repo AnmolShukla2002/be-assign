@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import uuid from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 const wardenSchema = new mongoose.Schema({
   universityID: { type: String, required: true, unique: true },
@@ -16,7 +16,7 @@ const wardenSchema = new mongoose.Schema({
 });
 
 wardenSchema.methods.generateAuthToken = function () {
-  const generatedToken = uuid.v4();
+  const generatedToken = uuidv4();
   this.token = generatedToken;
   return generatedToken;
 };

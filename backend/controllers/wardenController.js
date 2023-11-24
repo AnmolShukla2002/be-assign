@@ -16,29 +16,11 @@ export const registerController = async (req, res) => {
       universityID,
       name,
       password: hashedPassword,
+      sessions: [
+        { day: "Thursday", time: "10:00 AM", bookedBy: null },
+        { day: "Friday", time: "10:00 AM", bookedBy: null },
+      ],
     });
-    const days = [4, 5];
-    const hours = [10];
-
-    for (const day of days) {
-      for (const hour of hours) {
-        const slotTime = new Date();
-        slotTime.setUTCHours(hour, 0, 0, 0);
-        const currentDay = slotTime.getUTCDay();
-        const daysToAdd = day - currentDay + (currentDay <= day ? 0 : 7);
-        slotTime.setUTCDate(slotTime.getUTCDate() + daysToAdd);
-        const formattedSession = {
-          day: slotTime.toLocaleString("en-US", { weekday: "long" }),
-          time: slotTime.toLocaleString("en-US", {
-            hour: "numeric",
-            minute: "numeric",
-            hour12: true,
-          }),
-          slotTime: slotTime,
-        };
-        newWarden.sessions.push(formattedSession);
-      }
-    }
 
     const authToken = newWarden.generateAuthToken();
     await newWarden.save();
@@ -71,10 +53,35 @@ export const loginController = async (req, res) => {
   }
 };
 
-export const createSession = async (req, res) => {};
-
 export const getFreeSlots = async (req, res) => {};
 
-export const bookSlot = async (req, res) => {};
+export const bookSlot = async (req, res) => {
+  try {
+    const { slotId, wardenId } = req.body;
 
-export const getPendingSessions = async (req, res) => {};
+    const warden = await Warden.findById(wardenId);
+    if (!warden) {
+      return res.status(404).json({ error: "Warden not found." });
+    }
+
+    const sessionToBook = warden.sessions.find(
+      (session) => session._id.toString() === slotId
+    );
+    if (!sessionToBook) {
+      return res.status(404).json({ error: "Slot not found." });
+    }
+
+    if (sessionToBook.isBooked) {
+      return res.status(400).json({ error: "Slot is already booked." });
+    }
+
+    sessionToBook.isBooked = true;
+    sessionToBook.bookedBy = wardenId;
+    await warden.save();
+
+    res.status(200).json({ message: "Slot booked successfully.", warden });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

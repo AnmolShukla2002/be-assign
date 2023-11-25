@@ -1,5 +1,6 @@
 import Warden from "../models/userModel.js";
 import bcrypt from "bcrypt";
+import { generateToken } from "../middleware/verifyToken.js";
 
 export const registerController = async (req, res) => {
   try {
@@ -22,9 +23,11 @@ export const registerController = async (req, res) => {
       ],
     });
 
-    const authToken = newWarden.generateAuthToken();
     await newWarden.save();
-    res.status(201).json({ warden: newWarden, token: authToken });
+    res.status(201).json({
+      message: "Registered Successfully",
+      warden: newWarden,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -44,11 +47,12 @@ export const loginController = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const authToken = user.generateAuthToken();
+    const authToken = generateToken(user);
+    console.log(authToken);
     await user.save();
-    res.json({ user, token: authToken });
-  } catch {
-    console.error(error);
+    res.json({ message: "Login Successful", user, token: authToken });
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -67,15 +71,15 @@ export const bookSlot = async (req, res) => {
     const sessionToBook = warden.sessions.find(
       (session) => session._id.toString() === slotId
     );
+
     if (!sessionToBook) {
       return res.status(404).json({ error: "Slot not found." });
     }
 
-    if (sessionToBook.isBooked) {
+    if (sessionToBook.bookedBy) {
       return res.status(400).json({ error: "Slot is already booked." });
     }
 
-    sessionToBook.isBooked = true;
     sessionToBook.bookedBy = wardenId;
     await warden.save();
 
